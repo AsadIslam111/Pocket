@@ -84,7 +84,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 SizedBox(
                   width: double.infinity,
                   height: 56,
-                  child: ElevatedButton(
+                  child: FilledButton(
                     onPressed: _isLoading ? null : _handleSignup,
                     child: Text(_isLoading ? 'Signing up...' : 'Sign up'),
                   ),

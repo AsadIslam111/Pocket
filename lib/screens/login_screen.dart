@@ -42,7 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Theme.of(context).primaryColor.withOpacity(0.1),
+              Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
               Theme.of(context).scaffoldBackgroundColor,
             ],
           ),
@@ -85,7 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: TextStyle(
                       fontSize: titleFontSize,
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(context).primaryColor,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                     child: const Text('Pocket'),
                   ),
@@ -161,7 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         SizedBox(
                           width: double.infinity,
                           height: 56,
-                          child: ElevatedButton(
+                          child: FilledButton(
                             onPressed: _isLoading ? null : _handleEmailPasswordSignIn,
                             child: Text(_isLoading ? 'Signing in...' : 'Sign in'),
                           ),
@@ -179,7 +179,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     label: const Text('Sign in with Google'),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-                      side: BorderSide(color: Theme.of(context).dividerColor),
+                      side: BorderSide(color: Theme.of(context).colorScheme.outline),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),

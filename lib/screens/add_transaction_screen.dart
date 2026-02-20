@@ -103,9 +103,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.transaction != null ? 'Edit Transaction' : 'Add Transaction'),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.transparent,
       ),
       body: Form(
         key: _formKey,
@@ -132,13 +129,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
                 ],
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Amount',
                   prefixText: '৳ ',
-                  prefixIcon: const Icon(Icons.calculate),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  prefixIcon: Icon(Icons.calculate),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -158,12 +152,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               // Title
               TextFormField(
                 controller: _titleController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Title',
-                  prefixIcon: const Icon(Icons.title),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  prefixIcon: Icon(Icons.title),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -177,12 +168,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               // Category — changes based on type
               DropdownButtonFormField<String>(
                 value: _selectedCategory,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Category',
-                  prefixIcon: const Icon(Icons.category),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  prefixIcon: Icon(Icons.category),
                 ),
                 items: _currentCategories.map((String category) {
                   return DropdownMenuItem<String>(
@@ -206,12 +194,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               InkWell(
                 onTap: () => _selectDate(context),
                 child: InputDecorator(
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     labelText: 'Date',
-                    prefixIcon: const Icon(Icons.calendar_today),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    prefixIcon: Icon(Icons.calendar_today),
                   ),
                   child: Text(
                     DateFormat('MMM dd, yyyy').format(_selectedDate),
@@ -225,27 +210,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               TextFormField(
                 controller: _notesController,
                 maxLines: 3,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Notes (Optional)',
-                  prefixIcon: const Icon(Icons.note),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  prefixIcon: Icon(Icons.note),
                 ),
               ),
               const SizedBox(height: 32),
 
-              // Save Button
+              // Save Button — M3 FilledButton
               SizedBox(
                 width: double.infinity,
                 height: 56,
-                child: ElevatedButton(
+                child: FilledButton(
                   onPressed: _saveTransaction,
-                  style: ElevatedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
                   child: Text(
                     widget.transaction != null ? 'Update Transaction' : 'Save Transaction',
                     style: const TextStyle(fontSize: 16),
@@ -260,47 +237,22 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Widget _buildTypeSelector() {
-    return Row(
-      children: TransactionType.values.map((type) {
-        final isSelected = _selectedType == type;
-        return Expanded(
-          child: GestureDetector(
-            onTap: () => _onTypeChanged(type),
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? _getTypeColor(type)
-                    : Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: isSelected
-                      ? _getTypeColor(type)
-                      : Theme.of(context).colorScheme.outline.withOpacity(0.2),
-                ),
-              ),
-              child: Column(
-                children: [
-                  Icon(
-                    _getTypeIcon(type),
-                    color: isSelected ? Colors.white : _getTypeColor(type),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    type.name.toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: isSelected ? Colors.white : _getTypeColor(type),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+    return SegmentedButton<TransactionType>(
+      segments: TransactionType.values.map((type) {
+        return ButtonSegment<TransactionType>(
+          value: type,
+          icon: Icon(_getTypeIcon(type)),
+          label: Text(type.name.toUpperCase()),
         );
       }).toList(),
+      selected: {_selectedType},
+      onSelectionChanged: (Set<TransactionType> selection) {
+        _onTypeChanged(selection.first);
+      },
+      style: SegmentedButton.styleFrom(
+        selectedBackgroundColor: _getTypeColor(_selectedType).withOpacity(0.15),
+        selectedForegroundColor: _getTypeColor(_selectedType),
+      ),
     );
   }
 

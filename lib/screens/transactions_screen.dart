@@ -13,9 +13,6 @@ class TransactionsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Transactions'),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.transparent,
       ),
       body: Consumer<TransactionProvider>(
         builder: (context, transactionProvider, child) {
@@ -89,14 +86,12 @@ class TransactionsScreen extends StatelessWidget {
     List<String> options,
     Function(String) onChanged,
   ) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12.0),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-        ),
+        color: cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(

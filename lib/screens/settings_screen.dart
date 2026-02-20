@@ -18,9 +18,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.transparent,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -57,11 +54,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 CircleAvatar(
                   radius: 30,
-                  backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
                   child: Icon(
                     Icons.person,
                     size: 30,
-                    color: Theme.of(context).primaryColor,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -135,7 +132,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   return ListTile(
                     leading: Icon(
                       themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
-                      color: Theme.of(context).primaryColor,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                     title: const Text('Dark Mode'),
                     subtitle: Text(
@@ -158,7 +155,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ListTile(
                 leading: Icon(
                   _appLockEnabled ? Icons.lock : Icons.lock_open,
-                  color: Theme.of(context).primaryColor,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
                 title: const Text('App Lock'),
                 subtitle: Text(
@@ -267,15 +264,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildLogoutButton(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return SizedBox(
       width: double.infinity,
-      child: ElevatedButton.icon(
+      child: FilledButton.icon(
         onPressed: () => _showLogoutDialog(context),
         icon: const Icon(Icons.logout),
         label: const Text('Logout'),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.red,
-          foregroundColor: Colors.white,
+        style: FilledButton.styleFrom(
+          backgroundColor: cs.error,
+          foregroundColor: cs.onError,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -376,7 +374,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
-          ElevatedButton(
+          FilledButton(
             onPressed: () {
               final authProvider = Provider.of<AuthProvider>(context, listen: false);
               authProvider.signOut();
@@ -385,7 +383,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SnackBar(content: Text('Logged out successfully')),
               );
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
             child: const Text('Logout'),
           ),
         ],
