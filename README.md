@@ -26,7 +26,27 @@ Whether you're managing daily expenses or planning monthly budgets, Pocket keeps
 
 ---
 
-## 📸 Features
+## 📱 Screens
+
+<p align="center">
+  <img src="Screens/Landing.jpg" alt="Login Screen" width="230" />&nbsp;&nbsp;
+  <img src="Screens/Sign Up.jpg" alt="Sign Up Screen" width="230" />&nbsp;&nbsp;
+  <img src="Screens/Dashboard.jpg" alt="Dashboard Screen" width="230" />
+</p>
+
+<p align="center">
+  <img src="Screens/Transection History.jpg" alt="Transaction History" width="230" />&nbsp;&nbsp;
+  <img src="Screens/Budget.jpg" alt="Budget Screen" width="230" />&nbsp;&nbsp;
+  <img src="Screens/Summery.jpg" alt="Reports Screen" width="230" />
+</p>
+
+<p align="center">
+  <img src="Screens/Settings.jpg" alt="Settings Screen" width="230" />
+</p>
+
+---
+
+## �📸 Features
 
 | Feature | Description |
 |---------|-------------|
