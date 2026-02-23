@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:pocket_app/providers/auth_provider.dart';
 import 'package:pocket_app/providers/transaction_provider.dart';
 import 'package:pocket_app/providers/budget_provider.dart';
+import 'package:pocket_app/providers/debt_provider.dart';
 import 'package:pocket_app/providers/theme_provider.dart';
 import 'package:pocket_app/screens/login_screen.dart';
 import 'package:pocket_app/screens/main_navigation.dart';
@@ -48,6 +49,14 @@ class PocketApp extends StatelessWidget {
             return budget;
           },
         ),
+        ChangeNotifierProxyProvider<AuthProvider, DebtProvider>(
+          create: (_) => DebtProvider(),
+          update: (_, auth, debt) {
+            debt ??= DebtProvider();
+            debt.resetForUser(auth.userId, auth.userEmail);
+            return debt;
+          },
+        ),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
       child: Consumer<ThemeProvider>(
@@ -70,6 +79,12 @@ class PocketApp extends StatelessWidget {
                     : const LoginScreen();
               },
             ),
+            builder: (context, child) {
+              return ScrollConfiguration(
+                behavior: BouncingScrollBehavior(),
+                child: child!,
+              );
+            },
             debugShowCheckedModeBanner: false,
           );
         },
@@ -174,6 +189,29 @@ class PocketApp extends StatelessWidget {
         color: colorScheme.outlineVariant.withOpacity(0.5),
         thickness: 1,
       ),
+
+      // Smooth Scrolling
+      scrollbarTheme: ScrollbarThemeData(
+        thumbColor: WidgetStateProperty.all(colorScheme.primary.withOpacity(0.5)),
+        radius: const Radius.circular(10),
+        thickness: WidgetStateProperty.all(6),
+        interactive: true,
+      ),
+    ).copyWith(
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        },
+      ),
     );
+  }
+}
+
+// A custom scroll behavior that applies bouncing physics globally
+class BouncingScrollBehavior extends ScrollBehavior {
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) {
+    return const BouncingScrollPhysics();
   }
 }

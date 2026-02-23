@@ -222,10 +222,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         const SizedBox(height: 16),
         Card(
-          child: Column(
+          clipBehavior: Clip.antiAlias,
+          child: ExpansionTile(
+            leading: Icon(
+              Icons.info,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            title: const Text('About Pocket App'),
+            subtitle: const Text('Version, Terms, Privacy, Support'),
+            childrenPadding: const EdgeInsets.only(bottom: 8.0),
+            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+            collapsedBackgroundColor: Colors.transparent,
             children: [
+              const Divider(height: 1),
               ListTile(
-                leading: const Icon(Icons.info_outline),
+                leading: const Icon(Icons.system_update_alt),
                 title: const Text('App Version'),
                 subtitle: const Text('1.0.0'),
               ),
