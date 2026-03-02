@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:pocket_app/models/debt.dart';
 import 'dart:async';
+import 'package:url_launcher/url_launcher.dart';
 
 class DebtProvider extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -77,6 +78,8 @@ class DebtProvider extends ChangeNotifier {
   /// Create a purely manual debt
   Future<void> createManualDebt({
     required String creatorId,
+    required String creatorName,
+    String? creatorEmail,
     required String peerName,
     required double amount,
     required DebtType type,
@@ -84,6 +87,8 @@ class DebtProvider extends ChangeNotifier {
     try {
       final debt = Debt(
         creatorId: creatorId,
+        creatorName: creatorName,
+        creatorEmail: creatorEmail,
         peerName: peerName,
         amount: amount,
         type: type,
@@ -99,6 +104,8 @@ class DebtProvider extends ChangeNotifier {
   /// The main P2P workflow trigger
   Future<void> createP2PDebtRequest({
     required String creatorId,
+    required String creatorName,
+    String? creatorEmail,
     required String peerEmail,
     required double amount,
     required DebtType type,
@@ -125,6 +132,8 @@ class DebtProvider extends ChangeNotifier {
       // 2. Create the debt object
       final debt = Debt(
         creatorId: creatorId,
+        creatorName: creatorName,
+        creatorEmail: creatorEmail,
         peerEmail: peerEmail,
         peerId: foundPeerId,
         peerName: foundPeerName,
@@ -137,10 +146,45 @@ class DebtProvider extends ChangeNotifier {
       // 3. Save to DB
       await _firestore.collection('debts').doc(debt.id).set(debt.toJson());
 
+      // 4. Handle Invite if user doesn't exist
+      if (foundPeerId == null) {
+        await _sendEmailInvite(peerEmail, amount, type);
+      }
+
     } catch (e) {
-      debugPrint('Error creating P2P request: \$e');
+      debugPrint('Error creating P2P request: $e');
       rethrow;
     }
+  }
+
+  /// Opens the native email app to send an invite
+  Future<void> _sendEmailInvite(String email, double amount, DebtType type) async {
+    final String action = type == DebtType.lent ? "lent you" : "borrowed";
+    final String personAction = type == DebtType.lent ? "borrowed" : "lent";
+    
+    final Uri emailLaunchUri = Uri(
+      scheme: 'mailto',
+      path: email,
+      query: encodeQueryParameters(<String, String>{
+        'subject': 'Pocket App: Debt/Loan Request',
+        'body': 'Hi!\n\nI just added a record in the Pocket App that I $action ৳ $amount. '
+                'Please join the app so we can track this together: https://pocket-app-link.com\n\n'
+                'Regards!'
+      }),
+    );
+
+    if (await canLaunchUrl(emailLaunchUri)) {
+      await launchUrl(emailLaunchUri);
+    } else {
+      debugPrint('Could not launch email app');
+    }
+  }
+
+  String? encodeQueryParameters(Map<String, String> params) {
+    return params.entries
+        .map((MapEntry<String, String> e) =>
+            '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+        .join('&');
   }
 
   /// For the Target user to accept the request
@@ -188,6 +232,28 @@ class DebtProvider extends ChangeNotifier {
       });
     } catch (e) {
       debugPrint('Error converting debt to manual: \$e');
+      rethrow;
+    }
+  }
+
+  /// Settle an amount for a debt
+  Future<void> addPayment(String debtId, double paymentAmount) async {
+    try {
+      final debtDoc = await _firestore.collection('debts').doc(debtId).get();
+      if (!debtDoc.exists) return;
+      
+      final currentDebt = Debt.fromJson(debtDoc.data()!);
+      final newPaidAmount = (currentDebt.amountPaid ?? 0.0) + paymentAmount;
+      
+      // If fully paid, change status to settled
+      final bool fullyPaid = newPaidAmount >= currentDebt.amount;
+      
+      await _firestore.collection('debts').doc(debtId).update({
+        'amountPaid': newPaidAmount,
+        if (fullyPaid) 'status': DebtStatus.settled.toString().split('.').last,
+      });
+    } catch (e) {
+      debugPrint('Error recording payment: \$e');
       rethrow;
     }
   }

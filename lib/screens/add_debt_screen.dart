@@ -151,6 +151,8 @@ class _EmailDebtFormState extends State<_EmailDebtForm> {
 
         await debtProvider.createP2PDebtRequest(
           creatorId: authProvider.userId!,
+          creatorName: authProvider.bestName,
+          creatorEmail: authProvider.userEmail,
           peerEmail: _emailController.text.trim().toLowerCase(),
           amount: double.parse(_amountController.text),
           type: _selectedType,
@@ -284,6 +286,8 @@ class _ManualDebtFormState extends State<_ManualDebtForm> {
 
         await debtProvider.createManualDebt(
           creatorId: authProvider.userId!,
+          creatorName: authProvider.bestName,
+          creatorEmail: authProvider.userEmail,
           peerName: _nameController.text.trim(),
           amount: double.parse(_amountController.text),
           type: _selectedType,

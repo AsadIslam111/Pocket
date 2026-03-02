@@ -186,7 +186,22 @@ class DebtsScreen extends StatelessWidget {
     bool amILender = (amICreator && debt.type == DebtType.lent) || 
                      (!amICreator && debt.type == DebtType.borrowed);
 
-    String nameToShow = amICreator ? debt.peerName : 'Someone'; // If we have a robust user system, we'd fetch the creator's name here
+    // For nameToShow:
+    // If amICreator: show peerName
+    // If !amICreator: show creatorName OR creatorEmail handle OR 'Someone'
+    String nameToShow;
+    if (amICreator) {
+      nameToShow = debt.peerName;
+    } else {
+      if (debt.creatorName != null && debt.creatorName!.isNotEmpty) {
+        nameToShow = debt.creatorName!;
+      } else if (debt.creatorEmail != null && debt.creatorEmail!.isNotEmpty) {
+        nameToShow = debt.creatorEmail!.split('@').first;
+      } else {
+        nameToShow = 'Someone';
+      }
+    }
+
     String description = amILender ? 'You lent $nameToShow' : 'You borrowed from $nameToShow';
     Color amountColor = amILender ? Colors.green : Colors.red;
 
@@ -227,12 +242,26 @@ class DebtsScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                Text(
-                  NumberFormat.currency(symbol: '৳').format(debt.amount),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: amountColor,
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      NumberFormat.currency(symbol: '৳').format(debt.amount),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: amountColor,
+                        decoration: debt.status == DebtStatus.settled ? TextDecoration.lineThrough : null,
+                      ),
+                    ),
+                    if (debt.amountPaid != null && debt.amountPaid! > 0 && debt.status != DebtStatus.settled)
+                      Text(
+                        'Rem: ৳${debt.remainingAmount.toStringAsFixed(0)}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.orange,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ),
@@ -283,9 +312,9 @@ class DebtsScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     TextButton.icon(
-                      onPressed: () => provider.markAsSettled(debt.id),
-                      icon: const Icon(Icons.check_circle_outline),
-                      label: const Text('Mark as Settled'),
+                      onPressed: () => _showSettleDialog(context, debt, provider),
+                      icon: const Icon(Icons.payments_outlined),
+                      label: const Text('Settle'),
                       style: TextButton.styleFrom(foregroundColor: Colors.green),
                     ),
                   ],
@@ -314,5 +343,54 @@ class DebtsScreen extends StatelessWidget {
     if (debt.status == DebtStatus.rejected) return Colors.red;
     if (debt.status == DebtStatus.settled) return Colors.green;
     return Colors.black;
+  }
+
+  void _showSettleDialog(BuildContext context, Debt debt, DebtProvider provider) {
+    final TextEditingController amountController = TextEditingController(
+      text: debt.remainingAmount.toStringAsFixed(0)
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Record Payment'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+             Text('Total Debt: ৳${debt.amount.toStringAsFixed(0)}'),
+             Text('Remaining: ৳${debt.remainingAmount.toStringAsFixed(0)}', 
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+             const SizedBox(height: 16),
+             TextField(
+               controller: amountController,
+               keyboardType: TextInputType.number,
+               decoration: const InputDecoration(
+                 labelText: 'Payment Amount',
+                 prefixText: '৳ ',
+                 border: OutlineInputBorder(),
+               ),
+               autofocus: true,
+             ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final val = double.tryParse(amountController.text);
+              if (val != null && val > 0) {
+                provider.addPayment(debt.id, val);
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Record'),
+          ),
+        ],
+      ),
+    );
   }
 }

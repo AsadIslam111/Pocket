@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class AuthProvider extends ChangeNotifier {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
@@ -18,10 +19,47 @@ class AuthProvider extends ChangeNotifier {
     return providers.any((p) => p.providerId == 'google.com');
   }
 
+  /// Tiered fallback for name: Display Name > Email Handle > Generic
+  String get bestName => userName ?? userEmail?.split('@').first ?? 'A Pocket User';
+
   AuthProvider() {
-    _firebaseAuth.authStateChanges().listen((_) {
+    _firebaseAuth.authStateChanges().listen((user) {
+      if (user != null) {
+        _updateFcmToken();
+      }
       notifyListeners();
     });
+  }
+
+  /// Request notification permissions and save token to Firestore
+  Future<void> _updateFcmToken() async {
+    try {
+      final messaging = FirebaseMessaging.instance;
+      
+      // 1. Request Permission
+      NotificationSettings settings = await messaging.requestPermission(
+        alert: true,
+        badge: true,
+        provisional: false,
+        sound: true,
+      );
+
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        // 2. Get Token
+        String? token = await messaging.getToken();
+        
+        if (token != null && userId != null) {
+          // 3. Save to Firestore
+          await FirebaseFirestore.instance.collection('users').doc(userId).set({
+            'fcmToken': token,
+            'lastTokenSync': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+          debugPrint('🟢 FCM Token updated: $token');
+        }
+      }
+    } catch (e) {
+      debugPrint('🔴 Error updating FCM token: $e');
+    }
   }
 
   /// Ensure GoogleSignIn.instance.initialize() is called exactly once.
