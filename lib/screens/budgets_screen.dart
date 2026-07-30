@@ -3,65 +3,27 @@ import 'package:provider/provider.dart';
 import 'package:pocket_app/providers/budget_provider.dart';
 import 'package:pocket_app/models/budget.dart';
 import 'package:intl/intl.dart';
-import 'package:pocket_app/screens/debts_screen.dart';
-import 'package:pocket_app/screens/add_debt_screen.dart';
 
 class BudgetsScreen extends StatelessWidget {
   const BudgetsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Planning'),
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Budgets'),
-              Tab(text: 'Debts & Loans'),
-            ],
-          ),
-        ),
-        body: const TabBarView(
-          children: [
-            _BudgetsTab(),
-            DebtsScreen(), 
-          ],
-        ),
-        floatingActionButton: Builder(
-          builder: (context) {
-            final tabController = DefaultTabController.of(context);
-            return AnimatedBuilder(
-              animation: tabController,
-              builder: (context, child) {
-                return FloatingActionButton(
-                  onPressed: () {
-                    if (tabController.index == 0) {
-                      _showAddBudgetDialog(context);
-                    } else {
-                       Navigator.push(
-                         context,
-                         MaterialPageRoute(builder: (context) => const AddDebtScreen()),
-                       );
-                    }
-                  },
-                  child: const Icon(Icons.add),
-                );
-              },
-            );
-          }
-        ),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Budgets'),
+      ),
+      body: const _BudgetsTab(),
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'budgets_fab',
+        onPressed: () => _showAddBudgetDialog(context),
+        child: const Icon(Icons.add),
       ),
     );
   }
 
   void _showAddBudgetDialog(BuildContext context) {
-    // Moved inside _BudgetsTab state logic mostly, but kept for simplicity here.
-    // It's cleaner to handle this dialog inside the tab itself or passing it down.
-    // To keep it clean, let's just let the tab handle its own additions if possible,
-    // or we duplicate the dialog here. Keeping it simplest:
-     _BudgetsTab.showAddBudgetDialog(context);
+    _BudgetsTab.showAddBudgetDialog(context);
   }
 }
 

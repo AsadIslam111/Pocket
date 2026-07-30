@@ -1,9 +1,7 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart' hide Transaction;
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:pocket_app/models/transaction.dart';
 
 class TransactionProvider extends ChangeNotifier {
@@ -51,8 +49,6 @@ class TransactionProvider extends ChangeNotifier {
 
     if (userId != null) {
       _listenToFirestore();
-      // Also do a one-time fetch as fallback in case listener is slow
-      _fetchOnce();
     }
   }
 
@@ -72,20 +68,6 @@ class TransactionProvider extends ChangeNotifier {
         debugPrint('� TransactionProvider: Listener error: $e');
       },
     );
-  }
-
-  /// One-time fetch as fallback — guarantees data loads even if listener is stuck.
-  Future<void> _fetchOnce() async {
-    final col = _txCollection;
-    if (col == null) return;
-
-    try {
-      final snapshot = await col.get();
-      debugPrint('🟢 TransactionProvider: One-time fetch got ${snapshot.docs.length} docs');
-      _updateFromDocs(snapshot.docs);
-    } catch (e) {
-      debugPrint('🔴 TransactionProvider: One-time fetch error: $e');
-    }
   }
 
   /// Shared helper: parse docs into Transaction list and notify.
@@ -219,24 +201,5 @@ class TransactionProvider extends ChangeNotifier {
 
   List<String> getAccounts() {
     return ['All', ..._transactions.map((t) => t.account).toSet()];
-  }
-
-  // ─── Receipt upload ────────────────────────────────────────────────
-
-  Future<String?> uploadReceipt(String filePath, String transactionId) async {
-    if (_currentUserId == null) return null;
-    try {
-      final file = File(filePath);
-      final ref = FirebaseStorage.instance
-          .ref()
-          .child('users/$_currentUserId/receipts/$transactionId.jpg');
-
-      await ref.putFile(file);
-      final url = await ref.getDownloadURL();
-      return url;
-    } catch (e) {
-      debugPrint('Error uploading receipt: $e');
-      return null;
-    }
   }
 }

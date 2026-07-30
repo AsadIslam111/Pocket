@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:pocket_app/screens/dashboard_screen.dart';
 import 'package:pocket_app/screens/transactions_screen.dart';
 import 'package:pocket_app/screens/budgets_screen.dart';
-import 'package:pocket_app/screens/reports_screen.dart';
-import 'package:pocket_app/screens/settings_screen.dart';
+import 'package:pocket_app/screens/debts_screen.dart';
+import 'package:pocket_app/screens/more_screen.dart';
 
 
 class MainNavigation extends StatefulWidget {
@@ -20,8 +20,8 @@ class _MainNavigationState extends State<MainNavigation> {
     const DashboardScreen(),
     const TransactionsScreen(),
     const BudgetsScreen(),
-    const ReportsScreen(),
-    const SettingsScreen(),
+    const DebtsScreen(),
+    const MoreScreen(),
   ];
 
   @override
@@ -55,14 +55,14 @@ class _MainNavigationState extends State<MainNavigation> {
             label: 'Budgets',
           ),
           NavigationDestination(
-            icon: Icon(Icons.bar_chart_outlined),
-            selectedIcon: Icon(Icons.bar_chart),
-            label: 'Reports',
+            icon: Icon(Icons.handshake_outlined),
+            selectedIcon: Icon(Icons.handshake),
+            label: 'Debts',
           ),
           NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Settings',
+            icon: Icon(Icons.menu_outlined),
+            selectedIcon: Icon(Icons.menu),
+            label: 'More',
           ),
         ],
       ),

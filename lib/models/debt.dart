@@ -8,11 +8,48 @@ enum DebtStatus {
   active,           // P2P confirmed
   rejected,         // Peer declined
   manual,           // Either created as manual, or converted from pending
+  settlement_requested, // Borrower has requested a payment/settlement
   settled           // Paid off
+}
+
+class DebtPayment {
+  final String id;
+  final double amount;
+  final DateTime date;
+  final String? note;
+
+  DebtPayment({
+    String? id,
+    required this.amount,
+    DateTime? date,
+    this.note,
+  })  : id = id ?? const Uuid().v4(),
+        date = date ?? DateTime.now();
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'amount': amount,
+      'date': date.toIso8601String(),
+      'note': note,
+    };
+  }
+
+  factory DebtPayment.fromJson(Map<String, dynamic> json) {
+    return DebtPayment(
+      id: json['id'] ?? const Uuid().v4(),
+      amount: (json['amount'] ?? 0).toDouble(),
+      date: json['date'] != null ? DateTime.parse(json['date']) : DateTime.now(),
+      note: json['note'],
+    );
+  }
 }
 
 class Debt {
   final String id;
+  final String? description;
+  final DateTime? dueDate;
+  final List<DebtPayment> paymentHistory;
   final String creatorId;
   final String? creatorName;
   final String? creatorEmail;
@@ -26,8 +63,16 @@ class Debt {
   final DateTime createdAt;
   final DateTime? fallbackAt;
 
+  // Fields for pending settlement requests
+  final double? pendingPaymentAmount;
+  final DateTime? pendingPaymentDate;
+  final String? pendingPaymentNote;
+
   Debt({
     String? id,
+    this.description,
+    this.dueDate,
+    List<DebtPayment>? paymentHistory,
     required this.creatorId,
     this.creatorName,
     this.creatorEmail,
@@ -40,7 +85,11 @@ class Debt {
     required this.status,
     DateTime? createdAt,
     this.fallbackAt,
+    this.pendingPaymentAmount,
+    this.pendingPaymentDate,
+    this.pendingPaymentNote,
   })  : id = id ?? const Uuid().v4(),
+        paymentHistory = paymentHistory ?? [],
         createdAt = createdAt ?? DateTime.now();
 
   @override
@@ -50,6 +99,9 @@ class Debt {
 
   Debt copyWith({
     String? id,
+    String? description,
+    DateTime? dueDate,
+    List<DebtPayment>? paymentHistory,
     String? creatorId,
     String? creatorName,
     String? creatorEmail,
@@ -62,9 +114,15 @@ class Debt {
     DebtStatus? status,
     DateTime? createdAt,
     DateTime? fallbackAt,
+    double? pendingPaymentAmount,
+    DateTime? pendingPaymentDate,
+    String? pendingPaymentNote,
   }) {
     return Debt(
       id: id ?? this.id,
+      description: description ?? this.description,
+      dueDate: dueDate ?? this.dueDate,
+      paymentHistory: paymentHistory ?? this.paymentHistory,
       creatorId: creatorId ?? this.creatorId,
       creatorName: creatorName ?? this.creatorName,
       creatorEmail: creatorEmail ?? this.creatorEmail,
@@ -77,12 +135,18 @@ class Debt {
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       fallbackAt: fallbackAt ?? this.fallbackAt,
+      pendingPaymentAmount: pendingPaymentAmount ?? this.pendingPaymentAmount,
+      pendingPaymentDate: pendingPaymentDate ?? this.pendingPaymentDate,
+      pendingPaymentNote: pendingPaymentNote ?? this.pendingPaymentNote,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'description': description,
+      'dueDate': dueDate?.toIso8601String(),
+      'paymentHistory': paymentHistory.map((p) => p.toJson()).toList(),
       'creatorId': creatorId,
       'creatorName': creatorName,
       'creatorEmail': creatorEmail,
@@ -95,6 +159,9 @@ class Debt {
       'status': status.toString().split('.').last,
       'createdAt': createdAt.toIso8601String(),
       'fallbackAt': fallbackAt?.toIso8601String(),
+      'pendingPaymentAmount': pendingPaymentAmount,
+      'pendingPaymentDate': pendingPaymentDate?.toIso8601String(),
+      'pendingPaymentNote': pendingPaymentNote,
     };
   }
 
@@ -118,6 +185,12 @@ class Debt {
 
     return Debt(
       id: json['id'] ?? const Uuid().v4(),
+      description: json['description'],
+      dueDate: json['dueDate'] != null ? DateTime.parse(json['dueDate']) : null,
+      paymentHistory: (json['paymentHistory'] as List<dynamic>?)
+              ?.map((p) => DebtPayment.fromJson(p as Map<String, dynamic>))
+              .toList() ??
+          [],
       creatorId: json['creatorId'] ?? '',
       creatorName: json['creatorName'],
       creatorEmail: json['creatorEmail'],
@@ -129,11 +202,14 @@ class Debt {
       type: parsedType,
       status: parsedStatus,
       createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
+          ? (json['createdAt'] is String ? DateTime.parse(json['createdAt']) : (json['createdAt'] as dynamic).toDate())
           : DateTime.now(),
       fallbackAt: json['fallbackAt'] != null
-          ? DateTime.parse(json['fallbackAt'])
+          ? (json['fallbackAt'] is String ? DateTime.parse(json['fallbackAt']) : (json['fallbackAt'] as dynamic).toDate())
           : null,
+      pendingPaymentAmount: json['pendingPaymentAmount'] != null ? (json['pendingPaymentAmount']).toDouble() : null,
+      pendingPaymentDate: json['pendingPaymentDate'] != null ? DateTime.parse(json['pendingPaymentDate']) : null,
+      pendingPaymentNote: json['pendingPaymentNote'],
     );
   }
 }

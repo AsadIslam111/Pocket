@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart' as firebase;
 import 'package:pocket_app/providers/auth_provider.dart';
 import 'package:pocket_app/screens/signup_screen.dart';
 

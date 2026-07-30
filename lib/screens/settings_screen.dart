@@ -38,6 +38,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
             // Logout Button
             _buildLogoutButton(context),
+            const SizedBox(height: 16),
+
+            // Delete Account Button
+            _buildDeleteAccountButton(context),
           ],
         ),
       ),
@@ -274,26 +278,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildLogoutButton(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return SizedBox(
-      width: double.infinity,
-      child: FilledButton.icon(
-        onPressed: () => _showLogoutDialog(context),
-        icon: const Icon(Icons.logout),
-        label: const Text('Logout'),
-        style: FilledButton.styleFrom(
-          backgroundColor: cs.error,
-          foregroundColor: cs.onError,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      ),
-    );
-  }
-
   void _showNotificationsDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -374,6 +358,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildLogoutButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () => _showLogoutDialog(context),
+        icon: const Icon(Icons.logout),
+        label: const Text('Logout'),
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          side: BorderSide(color: Theme.of(context).colorScheme.error.withOpacity(0.5)),
+          foregroundColor: Theme.of(context).colorScheme.error,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDeleteAccountButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: TextButton.icon(
+        onPressed: () => _showDeleteAccountWarningDialog(context),
+        icon: const Icon(Icons.delete_forever, size: 20),
+        label: const Text('Delete Account'),
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          foregroundColor: Theme.of(context).colorScheme.error,
+        ),
+      ),
+    );
+  }
+
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -401,6 +416,163 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: const Text('Logout'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showDeleteAccountWarningDialog(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final email = authProvider.userEmail ?? 'your email';
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.warning_amber_rounded, size: 40, color: Colors.red),
+        title: const Text('Delete Account?'),
+        content: Text(
+          'This action is PERMANENT and CANNOT be undone.\n\n'
+          'All your recorded transactions, budgets, debts, and profile data will be permanently erased.\n\n'
+          'To prevent accidental deletion, tap below to generate a 6-digit security code for $email.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                final code = await authProvider.sendDeletionVerificationCode();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Security code sent to $email (Code: $code)'),
+                      duration: const Duration(seconds: 8),
+                      action: SnackBarAction(label: 'OK', onPressed: () {}),
+                    ),
+                  );
+                  _showCodeInputDialog(context, email);
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error generating code: $e')),
+                  );
+                }
+              }
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Send Security Code'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCodeInputDialog(BuildContext context, String email) {
+    final codeController = TextEditingController();
+    bool isDeleting = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            icon: const Icon(Icons.mark_email_read_outlined, size: 36, color: Colors.red),
+            title: const Text('Enter Security Code'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Please enter the 6-digit code sent to your registered email ($email) to confirm account deletion.',
+                  style: const TextStyle(fontSize: 13),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: codeController,
+                  keyboardType: TextInputType.number,
+                  maxLength: 6,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    letterSpacing: 8,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  decoration: const InputDecoration(
+                    hintText: '123456',
+                    counterText: '',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: isDeleting ? null : () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: isDeleting
+                    ? null
+                    : () async {
+                        final input = codeController.text.trim();
+                        if (input.length != 6) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please enter a valid 6-digit code.')),
+                          );
+                          return;
+                        }
+
+                        setState(() {
+                          isDeleting = true;
+                        });
+
+                        try {
+                          final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                          await authProvider.deleteAccount(input);
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Account and all data successfully deleted.'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            setState(() {
+                              isDeleting = false;
+                            });
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+                            );
+                          }
+                        }
+                      },
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+                child: isDeleting
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Confirm Deletion'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

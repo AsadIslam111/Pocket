@@ -38,7 +38,6 @@ class BudgetProvider extends ChangeNotifier {
 
     if (userId != null) {
       _listenToFirestore();
-      _fetchOnce();
     }
   }
 
@@ -54,18 +53,6 @@ class BudgetProvider extends ChangeNotifier {
         debugPrint('🔴 BudgetProvider: Listener error: $e');
       },
     );
-  }
-
-  Future<void> _fetchOnce() async {
-    final col = _budgetCollection;
-    if (col == null) return;
-
-    try {
-      final snapshot = await col.get();
-      _updateFromDocs(snapshot.docs);
-    } catch (e) {
-      debugPrint('🔴 BudgetProvider: Fetch error: $e');
-    }
   }
 
   void _updateFromDocs(List<QueryDocumentSnapshot> docs) {

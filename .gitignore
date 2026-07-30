@@ -5,12 +5,11 @@
 *.swp
 .DS_Store
 .atom/
-.build/
 .buildlog/
 .history
 .svn/
-.swiftpm/
 migrate_working_dir/
+*.txt
 
 # IntelliJ related
 *.iml
@@ -33,6 +32,9 @@ migrate_working_dir/
 .pub/
 /build/
 
+# Web related
+lib/generated_plugin_registrant.dart
+
 # Symbolication related
 app.*.symbols
 
@@ -44,10 +46,32 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# iOS / macOS related
+*.mode1v3
+*.mode2v3
+*.pbxuser
+*.perspectivev3
+xcuserdata/
+Pods/
+.symlinks/
+profile
+*.moved-aside
+DerivedData/
+.idea/modules.xml
+.idea/workspace.xml
+
+# Windows / Linux related
+windows/flutter/ephemeral/
+windows/flutter/generated_plugin_registrant.cc
+linux/flutter/ephemeral/
+linux/flutter/generated_plugin_registrant.cc
+
 # ─── Sensitive files — DO NOT commit ─────────────────────────
+
 # Firebase config (contains API keys & OAuth client IDs)
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
+macos/Runner/GoogleService-Info.plist
 
 # Android local config (contains local SDK paths)
 android/local.properties
@@ -55,6 +79,9 @@ android/local.properties
 # Signing keys
 *.jks
 *.keystore
+*.p12
+*.key
+*.pem
 android/key.properties
 
 # Environment variables

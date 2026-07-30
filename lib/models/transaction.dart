@@ -11,7 +11,6 @@ class Transaction {
   final String account;
   final DateTime date;
   final String? notes;
-  final String? receiptUrl;
 
   Transaction({
     String? id,
@@ -22,7 +21,6 @@ class Transaction {
     required this.account,
     required this.date,
     this.notes,
-    this.receiptUrl,
   }) : id = id ?? const Uuid().v4();
 
   Transaction copyWith({
@@ -34,7 +32,6 @@ class Transaction {
     String? account,
     DateTime? date,
     String? notes,
-    String? receiptUrl,
   }) {
     return Transaction(
       id: id ?? this.id,
@@ -45,7 +42,6 @@ class Transaction {
       account: account ?? this.account,
       date: date ?? this.date,
       notes: notes ?? this.notes,
-      receiptUrl: receiptUrl ?? this.receiptUrl,
     );
   }
 
@@ -59,7 +55,6 @@ class Transaction {
       'account': account,
       'date': date.toIso8601String(),
       'notes': notes,
-      'receiptUrl': receiptUrl,
     };
   }
 
@@ -82,7 +77,6 @@ class Transaction {
       account: json['account'] ?? 'Cash',
       date: json['date'] != null ? DateTime.parse(json['date']) : DateTime.now(),
       notes: json['notes'],
-      receiptUrl: json['receiptUrl'],
     );
   }
 }

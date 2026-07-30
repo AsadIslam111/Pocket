@@ -3,6 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:pocket_app/models/debt.dart';
 import 'dart:async';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class DebtProvider extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -60,6 +63,7 @@ class DebtProvider extends ChangeNotifier {
 
         _checkAndConvertExpiredDebts(); // Auto-convert tool
         _errorMessage = null;
+        _isLoading = false;
         notifyListeners();
       }, onError: (error) {
         debugPrint('Firestore Stream Error: $error');
@@ -97,6 +101,35 @@ class DebtProvider extends ChangeNotifier {
       await _firestore.collection('debts').doc(debt.id).set(debt.toJson());
     } catch (e) {
       debugPrint('Error creating manual debt: \$e');
+      rethrow;
+    }
+  }
+
+  /// Update a manual debt
+  Future<void> updateManualDebt({
+    required String debtId,
+    required String peerName,
+    required double amount,
+    required DebtType type,
+  }) async {
+    try {
+      await _firestore.collection('debts').doc(debtId).update({
+        'peerName': peerName,
+        'amount': amount,
+        'type': type.toString().split('.').last,
+      });
+    } catch (e) {
+      debugPrint('Error updating manual debt: \$e');
+      rethrow;
+    }
+  }
+
+  /// Delete a debt (used for manual debts or dismissing rejected/settled debts)
+  Future<void> deleteDebt(String debtId) async {
+    try {
+      await _firestore.collection('debts').doc(debtId).delete();
+    } catch (e) {
+      debugPrint('Error deleting debt: \$e');
       rethrow;
     }
   }
@@ -236,8 +269,145 @@ class DebtProvider extends ChangeNotifier {
     }
   }
 
-  /// Settle an amount for a debt
-  Future<void> addPayment(String debtId, double paymentAmount) async {
+  /// Borrower requests a payment/settlement
+  Future<void> requestPayment(String debtId, double paymentAmount, {String? note, DateTime? date}) async {
+    try {
+      await _firestore.collection('debts').doc(debtId).update({
+        'status': DebtStatus.settlement_requested.toString().split('.').last,
+        'pendingPaymentAmount': paymentAmount,
+        'pendingPaymentNote': note,
+        'pendingPaymentDate': date?.toIso8601String(),
+      });
+
+      // Fetch debt to identify the lender
+      final debtDoc = await _firestore.collection('debts').doc(debtId).get();
+      if (debtDoc.exists) {
+        final currentDebt = Debt.fromJson(debtDoc.data()!);
+        bool amICreator = currentDebt.creatorId == _currentUserId;
+        String targetUserId = amICreator ? (currentDebt.peerId ?? '') : currentDebt.creatorId;
+        
+        if (targetUserId.isNotEmpty) {
+          await _sendOneSignalNotification(
+            targetUserId: targetUserId,
+            heading: "Payment Requested",
+            content: "A payment of ৳${paymentAmount.toStringAsFixed(0)} is waiting for your approval.",
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error requesting payment: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> _sendOneSignalNotification({required String targetUserId, required String heading, required String content}) async {
+    try {
+      final appId = dotenv.env['ONESIGNAL_APP_ID'];
+      final restKey = dotenv.env['ONESIGNAL_REST_KEY'];
+      
+      if (appId == null || restKey == null) {
+        debugPrint('OneSignal App ID or REST Key is missing in .env file');
+        return;
+      }
+
+      final response = await http.post(
+        Uri.parse('https://onesignal.com/api/v1/notifications'),
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Authorization': 'Basic $restKey',
+        },
+        body: jsonEncode({
+          'app_id': appId,
+          'include_aliases': {
+            'external_id': [targetUserId]
+          },
+          'target_channel': 'push',
+          'headings': {'en': heading},
+          'contents': {'en': content},
+        }),
+      );
+      if (response.statusCode != 200) {
+        debugPrint('OneSignal API Error: ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('Error sending notification: $e');
+    }
+  }
+
+  /// Lender approves the payment request
+  Future<void> approvePaymentRequest(String debtId) async {
+    try {
+      final debtDoc = await _firestore.collection('debts').doc(debtId).get();
+      if (!debtDoc.exists) return;
+      
+      final currentDebt = Debt.fromJson(debtDoc.data()!);
+      final paymentAmount = currentDebt.pendingPaymentAmount ?? 0.0;
+      final note = currentDebt.pendingPaymentNote;
+      final date = currentDebt.pendingPaymentDate ?? DateTime.now();
+
+      final newPaidAmount = (currentDebt.amountPaid ?? 0.0) + paymentAmount;
+      final bool fullyPaid = newPaidAmount >= currentDebt.amount;
+      
+      final payment = DebtPayment(amount: paymentAmount, note: note, date: date);
+
+      await _firestore.collection('debts').doc(debtId).update({
+        'amountPaid': newPaidAmount,
+        'paymentHistory': FieldValue.arrayUnion([payment.toJson()]),
+        'status': fullyPaid ? DebtStatus.settled.toString().split('.').last : DebtStatus.active.toString().split('.').last,
+        'pendingPaymentAmount': null,
+        'pendingPaymentNote': null,
+        'pendingPaymentDate': null,
+      });
+
+      // Send approval notification to borrower
+      bool amICreator = currentDebt.creatorId == _currentUserId;
+      String targetUserId = amICreator ? (currentDebt.peerId ?? '') : currentDebt.creatorId;
+      if (targetUserId.isNotEmpty) {
+        await _sendOneSignalNotification(
+          targetUserId: targetUserId,
+          heading: "Payment Approved",
+          content: "Your payment of ৳${paymentAmount.toStringAsFixed(0)} was approved!",
+        );
+      }
+    } catch (e) {
+      debugPrint('Error approving payment request: $e');
+      rethrow;
+    }
+  }
+
+  /// Lender declines the payment request
+  Future<void> declinePaymentRequest(String debtId) async {
+    try {
+      final debtDoc = await _firestore.collection('debts').doc(debtId).get();
+      if (!debtDoc.exists) return;
+      final currentDebt = Debt.fromJson(debtDoc.data()!);
+      final paymentAmount = currentDebt.pendingPaymentAmount ?? 0.0;
+
+      await _firestore.collection('debts').doc(debtId).update({
+        'status': DebtStatus.active.toString().split('.').last,
+        'pendingPaymentAmount': null,
+        'pendingPaymentNote': null,
+        'pendingPaymentDate': null,
+      });
+
+      // Send decline notification to borrower
+      bool amICreator = currentDebt.creatorId == _currentUserId;
+      String targetUserId = amICreator ? (currentDebt.peerId ?? '') : currentDebt.creatorId;
+      if (targetUserId.isNotEmpty) {
+        await _sendOneSignalNotification(
+          targetUserId: targetUserId,
+          heading: "Payment Declined",
+          content: "Your payment request of ৳${paymentAmount.toStringAsFixed(0)} was declined.",
+        );
+      }
+    } catch (e) {
+      debugPrint('Error declining payment request: $e');
+      rethrow;
+    }
+  }
+
+  /// Settle an amount for a debt (used for manual debts or direct lender additions)
+  Future<void> addPayment(String debtId, double paymentAmount, {String? note, DateTime? date}) async {
     try {
       final debtDoc = await _firestore.collection('debts').doc(debtId).get();
       if (!debtDoc.exists) return;
@@ -248,8 +418,11 @@ class DebtProvider extends ChangeNotifier {
       // If fully paid, change status to settled
       final bool fullyPaid = newPaidAmount >= currentDebt.amount;
       
+      final payment = DebtPayment(amount: paymentAmount, note: note, date: date);
+
       await _firestore.collection('debts').doc(debtId).update({
         'amountPaid': newPaidAmount,
+        'paymentHistory': FieldValue.arrayUnion([payment.toJson()]),
         if (fullyPaid) 'status': DebtStatus.settled.toString().split('.').last,
       });
     } catch (e) {
@@ -273,7 +446,6 @@ class DebtProvider extends ChangeNotifier {
   /// Internal checker that runs every time fetch completes or app opens
   void _checkAndConvertExpiredDebts() {
     final now = DateTime.now();
-    bool needsUpdate = false;
 
     for (var debt in _debts) {
       if ((debt.status == DebtStatus.pending_invite || debt.status == DebtStatus.pending_approval) &&
@@ -282,12 +454,7 @@ class DebtProvider extends ChangeNotifier {
         
         // It has expired! Update it on Firestore
         convertToManualDebt(debt.id);
-        needsUpdate = true;
       }
-    }
-
-    if (!needsUpdate) {
-       _isLoading = false;
     }
   }
 

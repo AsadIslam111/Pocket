@@ -10,8 +10,6 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pocket'),
@@ -140,7 +138,6 @@ class DashboardScreen extends StatelessWidget {
     Color color,
     Color backgroundColor,
   ) {
-    final cs = Theme.of(context).colorScheme;
     return Card(
       color: backgroundColor,
       elevation: 0,

@@ -66,6 +66,7 @@ class TransactionsScreen extends StatelessWidget {
         },
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'transactions_fab',
         onPressed: () {
           Navigator.push(
             context,
