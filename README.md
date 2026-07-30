@@ -20,9 +20,9 @@
 
 ## ✨ Overview
 
-**Pocket** is a modern personal finance tracker built with Flutter and Firebase. It helps you effortlessly track income, expenses, and budgets — all with real-time cloud sync and a stunning Material Design 3 interface.
+**Pocket** is a modern personal finance tracker built with Flutter and Firebase. It helps you effortlessly track income, expenses, budgets, and **peer-to-peer (P2P) debts & loans** — all with real-time cloud sync and a stunning Material Design 3 interface.
 
-Whether you're managing daily expenses or planning monthly budgets, Pocket keeps your finances organized and accessible across all your devices.
+Whether you're managing daily expenses, planning monthly budgets, or tracking money lent to and borrowed from friends, Pocket keeps your finances organized and accessible across all your devices.
 
 ---
 
@@ -46,13 +46,14 @@ Whether you're managing daily expenses or planning monthly budgets, Pocket keeps
 
 ---
 
-## �📸 Features
+## 📸 Features
 
 | Feature | Description |
 |---------|-------------|
 | 📊 **Dashboard** | At-a-glance view of total balance, income & expenses |
 | 💳 **Transactions** | Add, edit, delete income & expense entries with categories |
 | 🎯 **Budgets** | Set spending limits per category and track progress |
+| 🤝 **P2P Debts & Loans** | Track money lent and borrowed with peer confirmations, partial payments & settlement requests |
 | 📈 **Reports** | Visual pie charts and spending breakdowns |
 | 🔐 **Authentication** | Email/password & Google Sign-In |
 | ☁️ **Cloud Sync** | Real-time Firestore sync — offline-first architecture |
@@ -69,17 +70,20 @@ lib/
 ├── constants/                   # App-wide constants
 ├── models/
 │   ├── transaction.dart         # Transaction data model
-│   └── budget.dart              # Budget data model
+│   ├── budget.dart              # Budget data model
+│   └── debt.dart                # Debt & loan tracking model with payments & statuses
 ├── providers/
 │   ├── auth_provider.dart       # Firebase Auth + Google Sign-In
 │   ├── transaction_provider.dart # CRUD + real-time Firestore sync
 │   ├── budget_provider.dart     # Budget management + Firestore
+│   ├── debt_provider.dart       # P2P debt/loan sync, settlements & invitations
 │   └── theme_provider.dart      # Dark/light mode persistence
 ├── screens/
 │   ├── dashboard_screen.dart    # Home — balance, income, expenses
 │   ├── transactions_screen.dart # Full transaction history + filters
 │   ├── add_transaction_screen.dart # Add/edit transaction form
 │   ├── budgets_screen.dart      # Budget cards + progress bars
+│   ├── debts_screen.dart        # P2P debts & loans manager (Lent / Borrowed)
 │   ├── reports_screen.dart      # Charts & spending analysis
 │   ├── settings_screen.dart     # Profile, preferences, about
 │   ├── login_screen.dart        # Email & Google login
@@ -163,13 +167,24 @@ users/
     │       ├── date: ISO 8601 string
     │       ├── notes: string?
     │       └── receiptUrl: string?
-    └── budgets/
-        └── {budgetId}/
+    ├── budgets/
+    │   └── {budgetId}/
+    │       ├── id: string
+    │       ├── category: string
+    │       ├── limit: number
+    │       ├── spent: number
+    │       └── icon: string (emoji)
+    └── debts/
+        └── {debtId}/
             ├── id: string
-            ├── category: string
-            ├── limit: number
-            ├── spent: number
-            └── icon: string (emoji)
+            ├── peerName: string
+            ├── peerEmail: string?
+            ├── amount: number
+            ├── amountPaid: number
+            ├── type: "lent" | "borrowed"
+            ├── status: "active" | "settled" | "pending_approval" | "manual"
+            ├── dueDate: ISO 8601 string?
+            └── paymentHistory: list<DebtPayment>
 ```
 
 ---
