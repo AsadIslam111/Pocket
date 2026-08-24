@@ -201,7 +201,7 @@ class DebtProvider extends ChangeNotifier {
       query: encodeQueryParameters(<String, String>{
         'subject': 'Pocket App: Debt/Loan Request',
         'body': 'Hi!\n\nI just added a record in the Pocket App that I $action ৳ $amount. '
-                'Please join the app so we can track this together: https://pocket-app-link.com\n\n'
+                'Please join the app so we can track this together: https://play.google.com/store/apps/details?id=com.asad.pocket_app\n\n'
                 'Regards!'
       }),
     );
