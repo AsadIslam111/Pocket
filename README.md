@@ -16,13 +16,31 @@
   <img src="https://img.shields.io/badge/License-MIT-green" alt="License" />
 </p>
 
+<p align="center">
+  <a href="https://play.google.com/store/apps/details?id=com.asad.pocket_app" target="_blank">
+    <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="65" />
+  </a>
+</p>
+
 ---
 
 ## ✨ Overview
 
-**Pocket** is a modern personal finance tracker built with Flutter and Firebase. It helps you effortlessly track income, expenses, budgets, and **peer-to-peer (P2P) debts & loans** — all with real-time cloud sync and a stunning Material Design 3 interface.
+**Pocket** is a modern, intelligent personal finance manager built with Flutter and Firebase. While standard finance apps only record personal expenses, Pocket takes financial tracking a step further by featuring a **comprehensive Peer-to-Peer (P2P) Debt & Loan ecosystem**, alongside smart budgeting, detailed analytics, and an offline-first architecture powered by Material Design 3.
 
-Whether you're managing daily expenses, planning monthly budgets, or tracking money lent to and borrowed from friends, Pocket keeps your finances organized and accessible across all your devices.
+---
+
+## 🌟 Spotlight: Peer-to-Peer (P2P) Debt & Loan Tracker
+
+> **The standout feature that sets Pocket apart from traditional expense managers.**
+
+Most budget apps stop at recording what *you* spend. Pocket solves the common headache of shared finances, splitting bills, and tracking money lent to or borrowed from friends, roommates, and colleagues:
+
+* 🤝 **Dual-Ledger Tracking (Lent vs. Borrowed)**: Keep crystal-clear records of who owes you and whom you owe with automatic balance calculations.
+* 💳 **Partial Payments & History**: Log gradual repayments with timestamps and notes, watching remaining debt decrease in real time.
+* 🔄 **Smart Settlement Workflow**: Send and receive formal settlement requests with mutual approval to avoid disputes.
+* 📩 **One-Tap Peer Invitations & Reminders**: Generate instant invite links or email summaries with direct Play Store download links so peers can collaborate on tracking.
+* ⚡ **Offline-First & Real-Time Sync**: Add or update debts anywhere without internet; Pocket caches changes locally and syncs them automatically via Firestore once you're back online.
 
 ---
 
